@@ -30,8 +30,9 @@ class TokeStorage
 end
 
 get '/' do
-    File.read(File.join('/', 'index.html'))
+  erb :index
 end
+
 
 
 post '/request' do
@@ -47,7 +48,8 @@ post '/request' do
         to: "#{$config["COUNTRY_CODE"]}#{phoneNumber}",
         text:"Your token is #{generatedToken}",
     )
-     
+    
+    erb :verify
 
 end
 
@@ -56,8 +58,11 @@ get '/verify' do
 
     if TokenStorage.tokenIsValid(token)
         TokenStorage.clearToken(token)
+        erb :verify_sucess
     else
-        FAIL
+      erb :verify, locals: {
+        display_error: True
+      }
     end
 end
 
