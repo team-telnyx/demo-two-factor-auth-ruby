@@ -5,27 +5,25 @@ require 'securerandom'
 require 'yaml'
 
 $config = YAML.safe_load(File.open('config.yml').read)
-Telnyx.api_key = $config['YOUR_API_KEY']
+Telnyx.api_key = $config['API_KEY']
 
 
-class TokeStorage
+class TokenStorage
     @@tokens = {}
-    def new()
-    end
-    def addToken(_token, phoneNumber)
+    def self.addToken(token, phoneNumber)
         @@tokens[token] = {
             phone_number: phoneNumber,
             last_updated: DateTime.now,
-            token: _token.upcase
+            token: token.upcase
         }
     end
 
-    def tokenIsValid(_token)
-        return @@tokens.key?(_token.upcase)
+    def self.tokenIsValid(token)
+        return @@tokens.key?(token)
     end
 
-    def clearToken(_token)
-        @@tokens.delete(_token.upcase)
+    def self.clearToken(token)
+        @@tokens.delete(token.upcase)
     end
 end
 
@@ -44,21 +42,20 @@ post '/request' do
     TokenStorage.addToken(generatedToken, phoneNumber)
 
     Telnyx::Message.create(
-        from: $config["FROM_NUMBER"],
-        to: "#{$config["COUNTRY_CODE"]}#{phoneNumber}",
+        from: "#{$config["COUNTRY_CODE"]}#{$config["FROM_NUMBER"]}",
+        to: "#{phoneNumber}",
         text:"Your token is #{generatedToken}",
     )
-    
-    erb :verify
 
+    erb :verify
 end
 
-get '/verify' do 
+post '/verify' do 
     token = params['token']
 
     if TokenStorage.tokenIsValid(token)
         TokenStorage.clearToken(token)
-        erb :verify_sucess
+        erb :verify_success
     else
       erb :verify, locals: {
         display_error: True
@@ -68,7 +65,7 @@ end
 
 
 def getRandomTokenHex(numChars)
-    return rand(numChars/2).to_s(numChars/2)
+   return SecureRandom.hex(numChars) 
 end
 
     
